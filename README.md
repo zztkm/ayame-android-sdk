@@ -1,4 +1,4 @@
-# Ayame Android SDK
+# [WIP] Ayame Android SDK
 
 OpenAyame プロジェクトで公開されている Ayame 仕様に準拠した Android ライブラリです。
 
