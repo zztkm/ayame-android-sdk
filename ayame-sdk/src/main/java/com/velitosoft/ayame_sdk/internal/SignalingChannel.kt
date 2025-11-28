@@ -12,17 +12,31 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.webrtc.IceCandidate
 
+/**
+ * Ayame のシグナリングを管理するクラス。
+ *
+ * @param signalingUrl シグナリングサーバーのURL
+ * @param roomId ルームID
+ * @param clientId クライアントID（指定がなければランダム生成）
+ * @param signalingKey シグナリングキー（オプション）
+ * @param authnMetadata 認証メタデータ（オプション）、JSON 文字列を期待
+ */
 class SignalingChannel(
     private val signalingUrl: String,
     private val roomId: String,
-    private val clientId: String = UUID.randomUUID().toString(), // 指定がなければランダム生成
-    private val signalingKey: String? = null
+    private val clientId: String = UUID.randomUUID().toString(),
+    private val signalingKey: String? = null,
+    private val authnMetadata: String? = null,
 ) {
     private val client = OkHttpClient()
     private var ws: WebSocket? = null
 
     // JSONの設定（未知のキーがあっても無視するように設定）
-    private val jsonFormat = Json { ignoreUnknownKeys = true }
+    private val jsonFormat = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        classDiscriminator = "type"
+    }
 
     // 外部へのイベント通知用リスナー
     interface Listener {
@@ -80,10 +94,19 @@ class SignalingChannel(
 
     // "register" メッセージの作成と送信
     private fun sendRegister(ws: WebSocket) {
+        val authnMetadataElement = authnMetadata?.let {
+            try {
+                jsonFormat.parseToJsonElement(it)
+            } catch (e: Exception) {
+                Log.w("Ayame", "Failed to parse: $it, error: ${e.message}")
+                null
+            }
+        }
         val msg = RegisterMessage(
             roomId = roomId,
             clientId = clientId,
-            signalingKey = signalingKey
+            signalingKey = signalingKey,
+            authnMetadata = authnMetadataElement,
         )
         sendJson(msg)
     }

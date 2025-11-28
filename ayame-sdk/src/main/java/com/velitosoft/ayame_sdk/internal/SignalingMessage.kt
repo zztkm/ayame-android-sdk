@@ -16,9 +16,10 @@ sealed class AyameSignalingMessage {
 @SerialName("register")
 data class RegisterMessage(
     override val type: String = "register",
-    @SerialName("room_id") val roomId: String,
-    @SerialName("client_id") val clientId: String,
-    @SerialName("signaling_key") val signalingKey: String? = null
+    val roomId: String,
+    val clientId: String,
+    val signalingKey: String? = null,
+    val authnMetadata: Any? = null,
 ) : AyameSignalingMessage()
 
 @Serializable
@@ -64,9 +65,10 @@ data class AcceptMessage(
     override val type: String = "accept",
     val authzMetadata: Any,
     val iceServers: List<IceServer>,
-    // isExistUser と isExistClient はどちらしか入ってこない可能性が高いため、nullable にしている
-    val isExistUser: Boolean? = null,
+    // isExistUser と isExistClient は基本どちらしか入ってこないため、nullable にしている
+    // 過去の Ayame では isExistUser が利用されていたが、現在は isExistClient が利用されているという経緯がある
     val isExistClient: Boolean? = null,
+    val isExistUser: Boolean? = null,
 ) : AyameSignalingMessage()
 
 @Serializable

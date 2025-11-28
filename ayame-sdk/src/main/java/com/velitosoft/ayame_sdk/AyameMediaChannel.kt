@@ -8,28 +8,48 @@ import com.velitosoft.ayame_sdk.internal.OfferMessage
 import com.velitosoft.ayame_sdk.internal.PeerChannel
 import com.velitosoft.ayame_sdk.internal.RejectMessage
 import com.velitosoft.ayame_sdk.internal.SignalingChannel
+import org.webrtc.EglBase
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
 import org.webrtc.PeerConnection
 import org.webrtc.SessionDescription
+import org.webrtc.VideoCapturer
+import java.util.UUID
 
 class AyameMediaChannel(
-    signalingUrl: String,
-    roomId: String,
-    context: Context,
+    private val signalingUrl: String,
+    private val roomId: String,
+    private val context: Context,
     private val options: AyameOptions = AyameOptions.default(),
+    private val clientId: String = UUID.randomUUID().toString(),
+    private val signalingKey: String? = null,
+    private val authnMetadata: String? = null,
+    customVideoCapturer: VideoCapturer? = null,
 ) {
-
     var listener: AyameListener? = null
 
-    private val signaling = SignalingChannel(signalingUrl, roomId)
-    private val peer = PeerChannel(context, options, createPeerChannelListener())
+    private val signaling = SignalingChannel(
+        signalingUrl,
+        roomId,
+        clientId,
+        signalingKey,
+        authnMetadata
+    )
+    private val peer = PeerChannel(context, options, createPeerChannelListener(), customVideoCapturer)
+
+    val videoController: VideoController
+        get() = peer.videoController
+    val audioController: AudioController
+        get() = peer.audioController
+    val eglBaseContext: EglBase.Context
+        get() = peer.rootEglBase.eglBaseContext
 
     init {
         signaling.listener = createSignalingListener()
     }
 
     fun connect() {
+        peer.startLocalStream()
         signaling.connect()
     }
 

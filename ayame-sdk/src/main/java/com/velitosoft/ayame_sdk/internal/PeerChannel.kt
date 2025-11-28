@@ -2,8 +2,15 @@ package com.velitosoft.ayame_sdk.internal
 
 import android.content.Context
 import android.util.Log
+import com.velitosoft.ayame_sdk.AudioController
 import com.velitosoft.ayame_sdk.AyameOptions
+import com.velitosoft.ayame_sdk.VideoController
+import com.velitosoft.ayame_sdk.internal.media.LocalAudioManager
+import com.velitosoft.ayame_sdk.internal.media.LocalVideoManager
 import org.webrtc.DataChannel
+import org.webrtc.DefaultVideoDecoderFactory
+import org.webrtc.DefaultVideoEncoderFactory
+import org.webrtc.EglBase
 import org.webrtc.IceCandidate
 import org.webrtc.MediaConstraints
 import org.webrtc.MediaStream
@@ -11,11 +18,14 @@ import org.webrtc.PeerConnection
 import org.webrtc.PeerConnectionFactory
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
+import org.webrtc.VideoCapturer
+import java.util.UUID
 
 internal class PeerChannel(
     private val context: Context,
     private val options: AyameOptions,
-    private val listener: Listener
+    private val listener: Listener,
+    private val customVideoCapturer: VideoCapturer? = null
 ) {
     interface Listener {
         fun onSetLocalDescriptionSuccess(sdp: SessionDescription)
@@ -26,8 +36,19 @@ internal class PeerChannel(
         fun onError(description: String)
     }
 
+    val rootEglBase: EglBase = EglBase.create()
+
     private val factory: PeerConnectionFactory
     private var peerConnection: PeerConnection? = null
+
+    private val localAudioManager: LocalAudioManager
+    private val localVideoManager: LocalVideoManager
+
+    val videoController: VideoController
+        get() = localVideoManager
+    val audioController: AudioController
+        get() = localAudioManager
+
 
     init {
         PeerConnectionFactory.initialize(
@@ -36,10 +57,36 @@ internal class PeerChannel(
         )
 
         val builder = PeerConnectionFactory.builder()
+            .setVideoEncoderFactory(DefaultVideoEncoderFactory(rootEglBase.eglBaseContext, true, true))
+            .setVideoDecoderFactory(DefaultVideoDecoderFactory(rootEglBase.eglBaseContext))
 
         // TODO(zztkm): AyameOptionsに基づいて builder を設定する
-
         factory = builder.createPeerConnectionFactory()
+
+        localAudioManager = LocalAudioManager(factory, options)
+        localVideoManager = LocalVideoManager(
+            context,
+            factory,
+            rootEglBase.eglBaseContext,
+            options,
+            customVideoCapturer
+        )
+    }
+
+    fun startLocalStream() {
+        localAudioManager.start()
+        localVideoManager.start()
+
+        if (localAudioManager.track != null || localVideoManager.track != null) {
+            val localStream = factory.createLocalMediaStream(UUID.randomUUID().toString())
+            localAudioManager.track?.let {
+                localStream.addTrack(it)
+            }
+            localVideoManager.track?.let {
+                localStream.addTrack(it)
+            }
+            listener.onAddStream(localStream)
+        }
     }
 
     fun createPeerConnection(iceServers: List<PeerConnection.IceServer>) {
@@ -103,6 +150,14 @@ internal class PeerChannel(
                 TODO("Not yet implemented")
             }
         })
+
+        // PeerConnection にトラックを追加
+        localAudioManager.track?.let {
+            peerConnection?.addTrack(it, listOf(it.id()))
+        }
+        localVideoManager.track?.let {
+            peerConnection?.addTrack(it, listOf(it.id()))
+        }
     }
 
     fun createOffer() {
@@ -147,12 +202,11 @@ internal class PeerChannel(
             override fun onSetSuccess() {
                 listener.onSetLocalDescriptionSuccess(sdp)
             }
-
-            override fun onCreateSuccess(sdp: SessionDescription?) { }
-            override fun onCreateFailure(error: String?) { }
             override fun onSetFailure(error: String?) {
                 listener.onError("Set local description failed: $error")
             }
+            override fun onCreateSuccess(sdp: SessionDescription?) { }
+            override fun onCreateFailure(error: String?) { }
         }, sdp)
     }
 
@@ -161,14 +215,12 @@ internal class PeerChannel(
             override fun onSetSuccess() {
                 Log.i("Ayame", "setRemoteDescription: success")
             }
-
-            override fun onCreateSuccess(sdp: SessionDescription?) { }
-
-            override fun onCreateFailure(error: String?) { }
-
             override fun onSetFailure(error: String?) {
                 listener.onError("Set remote description failed: $error")
             }
+            override fun onCreateSuccess(sdp: SessionDescription?) { }
+            override fun onCreateFailure(error: String?) { }
+
         }, sdp)
     }
 
@@ -177,7 +229,12 @@ internal class PeerChannel(
     }
 
     fun close() {
+        localAudioManager.stop()
+        localVideoManager.stop()
+
         peerConnection?.close()
         peerConnection = null
+
+        rootEglBase.release()
     }
 }
