@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Sample</string>
+
+    <!-- Connection -->
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="connecting">Connecting…</string>
+    <string name="waiting_to_connect">Tap Connect to start</string>
+    <string name="waiting_for_peer">Waiting for peer to join…</string>
+    <string name="connection_error">Connection error</string>
+
+    <!-- Controls -->
+    <string name="toggle_video">Toggle video</string>
+    <string name="toggle_audio">Toggle audio</string>
+    <string name="switch_camera">Switch camera</string>
 </resources>

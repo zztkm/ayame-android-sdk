@@ -18,6 +18,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // BuildConfig fields for Ayame configuration from gradle.properties
+        buildConfigField("String", "AYAME_SIGNALING_URL", "\"${project.property("ayameSignalingUrl")}\"")
+        buildConfigField("String", "AYAME_ROOM_ID", "\"${project.property("ayameRoomId")}\"")
+        buildConfigField("String", "AYAME_SIGNALING_KEY", "\"${project.property("ayameSignalingKey")}\"")
     }
 
     buildTypes {
@@ -35,6 +40,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -45,14 +51,28 @@ kotlin {
 }
 
 dependencies {
+    // Ayame SDK
+    implementation(project(":ayame-sdk")) {
+        exclude(group = "com.android.support")
+    }
+
+    // AndroidX Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+
+    // ViewModel with Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+
+    // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material:material-icons-extended:1.7.6")
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
