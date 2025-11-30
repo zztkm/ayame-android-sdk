@@ -64,12 +64,12 @@ data class ByeMessage(
 @SerialName("accept")
 data class AcceptMessage(
     override val type: String = "accept",
-    val authzMetadata: JsonElement,
     val iceServers: List<IceServer>,
     // isExistUser と isExistClient は基本どちらしか入ってこないため、nullable にしている
     // 過去の Ayame では isExistUser が利用されていたが、現在は isExistClient が利用されているという経緯がある
     val isExistClient: Boolean? = null,
     val isExistUser: Boolean? = null,
+    val authzMetadata: JsonElement? = null,
 ) : AyameSignalingMessage()
 
 @Serializable

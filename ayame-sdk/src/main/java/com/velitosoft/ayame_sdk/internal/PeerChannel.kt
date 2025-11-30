@@ -125,15 +125,12 @@ internal class PeerChannel(
             }
 
             override fun onDataChannel(dataChannel: DataChannel?) {
-                TODO("Not yet implemented")
             }
 
             override fun onRenegotiationNeeded() {
-                TODO("Not yet implemented")
             }
 
             override fun onSignalingChange(newState: PeerConnection.SignalingState?) {
-                TODO("Not yet implemented")
             }
 
             override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
@@ -143,11 +140,9 @@ internal class PeerChannel(
             }
 
             override fun onIceConnectionReceivingChange(receiving: Boolean) {
-                TODO("Not yet implemented")
             }
 
             override fun onIceGatheringChange(newState: PeerConnection.IceGatheringState?) {
-                TODO("Not yet implemented")
             }
         })
 
