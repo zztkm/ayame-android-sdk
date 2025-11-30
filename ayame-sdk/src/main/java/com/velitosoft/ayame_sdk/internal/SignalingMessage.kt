@@ -2,6 +2,7 @@ package com.velitosoft.ayame_sdk.internal
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 sealed class AyameSignalingMessage {
@@ -19,7 +20,7 @@ data class RegisterMessage(
     val roomId: String,
     val clientId: String,
     val signalingKey: String? = null,
-    val authnMetadata: Any? = null,
+    val authnMetadata: JsonElement? = null,
 ) : AyameSignalingMessage()
 
 @Serializable
@@ -63,7 +64,7 @@ data class ByeMessage(
 @SerialName("accept")
 data class AcceptMessage(
     override val type: String = "accept",
-    val authzMetadata: Any,
+    val authzMetadata: JsonElement,
     val iceServers: List<IceServer>,
     // isExistUser と isExistClient は基本どちらしか入ってこないため、nullable にしている
     // 過去の Ayame では isExistUser が利用されていたが、現在は isExistClient が利用されているという経緯がある
